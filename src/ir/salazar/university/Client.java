@@ -24,19 +24,19 @@ public class Client {
 			try {
 				Scanner sc = new Scanner(System.in);
 				while (sc.hasNext()) {
-					os.writeBytes(sc.nextLine());
+					os.writeBytes(sc.nextLine() + "\n");
 					String responseLine;
-					while ((responseLine = is.readLine()) != null) {
+					if ((responseLine = is.readLine()) != null) {
 						System.out.println("Server: " + responseLine);
 						if (responseLine.indexOf("Ok") != -1) {
 							break;
 						}
 					}
 				}
+				sc.close();
 				os.close();
 				is.close();
 				clientSocket.close();
-				sc.close();
 			} catch (UnknownHostException e) {
 				System.err.println("Trying to connect to unknown host: " + e);
 			} catch (IOException e) {
