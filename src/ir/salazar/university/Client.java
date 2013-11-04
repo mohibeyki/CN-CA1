@@ -9,11 +9,12 @@ public class Client {
 	public static void main(String[] args) {
 		Socket clientSocket = null;
 		DataOutputStream os = null;
-		DataInputStream is = null;
+		BufferedReader is = null;
 		try {
 			clientSocket = new Socket("localhost", 3128);
 			os = new DataOutputStream(clientSocket.getOutputStream());
-			is = new DataInputStream(clientSocket.getInputStream());
+			is = new BufferedReader(new InputStreamReader(
+					clientSocket.getInputStream()));
 		} catch (UnknownHostException e) {
 			System.err.println("Don't know about host: hostname");
 		} catch (IOException e) {
@@ -28,9 +29,10 @@ public class Client {
 					String responseLine;
 					if ((responseLine = is.readLine()) != null) {
 						System.out.println("Server: " + responseLine);
-						if (responseLine.indexOf("Ok") != -1) {
+						if (responseLine.indexOf("Ok") != -1)
 							break;
-						}
+						if (responseLine.toLowerCase().startsWith("exit"))
+							break;
 					}
 				}
 				sc.close();
@@ -40,7 +42,7 @@ public class Client {
 			} catch (UnknownHostException e) {
 				System.err.println("Trying to connect to unknown host: " + e);
 			} catch (IOException e) {
-				System.err.println("IOException:  " + e);
+				System.err.println("IOException: " + e);
 			}
 		}
 	}
