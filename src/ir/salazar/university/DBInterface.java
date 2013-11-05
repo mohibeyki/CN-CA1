@@ -30,7 +30,7 @@ public class DBInterface {
 				statement.executeUpdate("use salazar");
 				try {
 					statement
-							.executeUpdate("create table user(id INT NOT NULL AUTO_INCREMENT, name VARCHAR(30) NOT NULL, PRIMARY KEY (id,name))");
+							.executeUpdate("create table user(id INT NOT NULL AUTO_INCREMENT, name VARCHAR(30, is_busy BOOLEAN DEFAULT FALSE) NOT NULL, PRIMARY KEY (id,name))");
 				} catch (SQLException e) {
 					System.err.println("Table 'user' already exists.");
 				}
@@ -60,8 +60,8 @@ public class DBInterface {
 	public ArrayList<String> getUsersWithThisFileName(String fileName) {
 		ArrayList<String> ret = new ArrayList<String>();
 		try {
-			resultSet = statement.executeQuery("SELECT user_name FROM userfile WHERE (file_name ='" + fileName+ "')");
-			while (resultSet.next()) 
+			resultSet = statement.executeQuery("SELECT user_name FROM userfile WHERE (file_name ='" + fileName + "')");
+			while (resultSet.next())
 				ret.add(resultSet.getString(1));
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -76,7 +76,7 @@ public class DBInterface {
 				int count = resultSet.getInt(1);
 				if (count > 0)
 					return false;
-				if (statement.executeUpdate("INSERT INTO user VALUES(default,'" + userName + "')") == 0)
+				if (statement.executeUpdate("INSERT INTO user VALUES(default,'" + userName + "',default)") == 0)
 					return false;
 				return true;
 			}
@@ -141,6 +141,30 @@ public class DBInterface {
 		return false;
 	}
 
+	public boolean setUserIsBusy(String userName, boolean val) {
+		try {
+			if (statement.executeUpdate("UPDATE user SET is_busy=" + (val ? "TRUE" : "FALSE")
+					+ " WHERE (name='" + userName + "')") >= 0)
+				return true;
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return false;
+	}
+
+	public boolean isUserBusy(String userName)
+	{
+		try {
+			resultSet = statement.executeQuery("SELECT is_busy FROM user WHERE (name ='" + userName + "')");
+			if (resultSet.next())
+				return resultSet.getBoolean(1);
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return true;
+	}
+	
 	public boolean isValidUserFile(String userName, String fileName) {
 		try {
 			resultSet = statement.executeQuery("SELECT is_valid FROM userfile WHERE (file_name ='" + fileName
@@ -192,86 +216,7 @@ public class DBInterface {
 		return false;
 	}
 
-	public void readDataBase() throws Exception {
-		try {
-			// This will load the MySQL driver, each DB has its own driver
-			Class.forName("com.mysql.jdbc.Driver");
-			// Setup the connection with the DB
-			connect = DriverManager.getConnection("jdbc:mysql://localhost/" + "user=noid&password=noid");
-
-			// Statements allow to issue SQL queries to the database
-			statement = connect.createStatement();
-			// Result set get the result of the SQL query
-			resultSet = statement.executeQuery("select * from FEEDBACK.COMMENTS");
-			writeResultSet(resultSet);
-
-			// PreparedStatements can use variables and are more efficient
-			preparedStatement = connect
-					.prepareStatement("insert into  FEEDBACK.COMMENTS values (default, ?, ?, ?, ? , ?, ?)");
-			// "myuser, webpage, datum, summary, COMMENTS from FEEDBACK.COMMENTS");
-			// Parameters start with 1
-			preparedStatement.setString(1, "Test");
-			preparedStatement.setString(2, "TestEmail");
-			preparedStatement.setString(3, "TestWebpage");
-			preparedStatement.setDate(4, new java.sql.Date(2009, 12, 11));
-			preparedStatement.setString(5, "TestSummary");
-			preparedStatement.setString(6, "TestComment");
-			preparedStatement.executeUpdate();
-
-			preparedStatement = connect
-					.prepareStatement("SELECT myuser, webpage, datum, summary, COMMENTS from FEEDBACK.COMMENTS");
-			resultSet = preparedStatement.executeQuery();
-			writeResultSet(resultSet);
-
-			// Remove again the insert comment
-			preparedStatement = connect.prepareStatement("delete from FEEDBACK.COMMENTS where myuser= ? ; ");
-			preparedStatement.setString(1, "Test");
-			preparedStatement.executeUpdate();
-
-			resultSet = statement.executeQuery("select * from FEEDBACK.COMMENTS");
-			writeMetaData(resultSet);
-
-		} catch (Exception e) {
-			throw e;
-		} finally {
-			close();
-		}
-
-	}
-
-	private void writeMetaData(ResultSet resultSet) throws SQLException {
-		// Now get some metadata from the database
-		// Result set get the result of the SQL query
-
-		System.out.println("The columns in the table are: ");
-		System.out.println("Table: " + resultSet.getMetaData().getTableName(1));
-		for (int i = 1; i <= resultSet.getMetaData().getColumnCount(); i++) {
-			System.out.println("Column " + i + " " + resultSet.getMetaData().getColumnName(i));
-		}
-	}
-
-	private void writeResultSet(ResultSet resultSet) throws SQLException {
-		// ResultSet is initially before the first data set
-		while (resultSet.next()) {
-			// It is possible to get the columns via name
-			// also possible to get the columns via the column number
-			// which starts at 1
-			// e.g. resultSet.getSTring(2);
-			String user = resultSet.getString("myuser");
-			String website = resultSet.getString("webpage");
-			String summary = resultSet.getString("summary");
-			Date date = resultSet.getDate("datum");
-			String comment = resultSet.getString("comments");
-			System.out.println("User: " + user);
-			System.out.println("Website: " + website);
-			System.out.println("Summary: " + summary);
-			System.out.println("Date: " + date);
-			System.out.println("Comment: " + comment);
-		}
-	}
-
-	// You need to close the resultSet
-	private void close() {
+	public void close() {
 		try {
 			if (resultSet != null) {
 				resultSet.close();
