@@ -12,10 +12,10 @@ import java.util.Date;
 public class DBInterface {
 	private Connection connect = null;
 	private Statement statement = null;
-	private PreparedStatement preparedStatement = null;
 	private ResultSet resultSet = null;
-
-	public DBInterface(String user, String pass) {
+	private static DBInterface myObject;
+	
+	private DBInterface(String user, String pass) {
 		try {
 			Class.forName("com.mysql.jdbc.Driver");
 			try {
@@ -30,7 +30,7 @@ public class DBInterface {
 				statement.executeUpdate("use salazar");
 				try {
 					statement
-							.executeUpdate("create table user(id INT NOT NULL AUTO_INCREMENT, name VARCHAR(30, is_busy BOOLEAN DEFAULT FALSE) NOT NULL, PRIMARY KEY (id,name))");
+							.executeUpdate("create table user(id INT NOT NULL AUTO_INCREMENT, name VARCHAR(30) NOT NULL, ip VARCHAR(20) NOT NULL  , is_busy BOOLEAN DEFAULT FALSE, PRIMARY KEY (id,name))");
 				} catch (SQLException e) {
 					System.err.println("Table 'user' already exists.");
 				}
@@ -57,7 +57,14 @@ public class DBInterface {
 
 	}
 
-	public ArrayList<String> getUsersWithThisFileName(String fileName) {
+	public static DBInterface instance()
+	{
+		if (myObject == null)
+			myObject = new DBInterface("root", "123456");
+		return myObject;
+	}
+	
+	public synchronized ArrayList<String> getUsersWithThisFileName(String fileName) {
 		ArrayList<String> ret = new ArrayList<String>();
 		try {
 			resultSet = statement.executeQuery("SELECT user_name FROM userfile WHERE (file_name ='" + fileName + "')");
@@ -69,14 +76,14 @@ public class DBInterface {
 		return ret;
 	}
 
-	public boolean addUser(String userName) {
+	public synchronized boolean addUser(String userName, String ip) {
 		try {
 			resultSet = statement.executeQuery("SELECT COUNT(*) FROM user WHERE name ='" + userName + "'");
 			if (resultSet.next()) {
 				int count = resultSet.getInt(1);
 				if (count > 0)
 					return false;
-				if (statement.executeUpdate("INSERT INTO user VALUES(default,'" + userName + "',default)") == 0)
+				if (statement.executeUpdate("INSERT INTO user VALUES(default,'" + userName + "','"+ ip +"',default)") == 0)
 					return false;
 				return true;
 			}
@@ -87,7 +94,7 @@ public class DBInterface {
 		return false;
 	}
 
-	public boolean addFile(String userName, String fileName) {
+	public synchronized boolean addFile(String userName, String fileName) {
 		try {
 			resultSet = statement.executeQuery("SELECT COUNT(*) FROM file WHERE name ='" + fileName + "'");
 			if (resultSet.next()) {
@@ -113,7 +120,7 @@ public class DBInterface {
 		return false;
 	}
 
-	public boolean shareFileToUser(String userName, String fileName) {
+	public synchronized boolean shareFileToUser(String userName, String fileName) {
 		try {
 			resultSet = statement.executeQuery("SELECT COUNT(id) FROM userfile WHERE (file_name ='" + fileName
 					+ "' AND  user_name ='" + userName + "')");
@@ -130,7 +137,7 @@ public class DBInterface {
 		return false;
 	}
 
-	public boolean validateUserFile(String userName, String fileName) {
+	public synchronized boolean validateUserFile(String userName, String fileName) {
 		try {
 			if (statement.executeUpdate("UPDATE userfile SET is_valid=TRUE WHERE (user_name='" + userName
 					+ "'AND file_name='" + fileName + "')") >= 0)
@@ -141,7 +148,7 @@ public class DBInterface {
 		return false;
 	}
 
-	public boolean setUserIsBusy(String userName, boolean val) {
+	public synchronized boolean setUserIsBusy(String userName, boolean val) {
 		try {
 			if (statement.executeUpdate("UPDATE user SET is_busy=" + (val ? "TRUE" : "FALSE")
 					+ " WHERE (name='" + userName + "')") >= 0)
@@ -152,7 +159,7 @@ public class DBInterface {
 		return false;
 	}
 
-	public boolean isUserBusy(String userName)
+	public synchronized boolean isUserBusy(String userName)
 	{
 		try {
 			resultSet = statement.executeQuery("SELECT is_busy FROM user WHERE (name ='" + userName + "')");
@@ -165,7 +172,7 @@ public class DBInterface {
 		return true;
 	}
 	
-	public boolean isValidUserFile(String userName, String fileName) {
+	public synchronized boolean isValidUserFile(String userName, String fileName) {
 		try {
 			resultSet = statement.executeQuery("SELECT is_valid FROM userfile WHERE (file_name ='" + fileName
 					+ "' AND  user_name ='" + userName + "')");
@@ -178,7 +185,7 @@ public class DBInterface {
 		return false;
 	}
 
-	public boolean updateFile(String fileName) {
+	public synchronized boolean updateFile(String fileName) {
 		try {
 			if (statement.executeUpdate("UPDATE userfile SET is_valid=FALSE WHERE (file_name='" + fileName + "')") >= 0)
 				return true;
@@ -188,7 +195,7 @@ public class DBInterface {
 		return false;
 	}
 
-	public String getOwner(String fileName) {
+	public synchronized String getOwner(String fileName) {
 		try {
 			resultSet = statement.executeQuery("SELECT user FROM file WHERE name ='" + fileName + "'");
 			if (resultSet.next())
@@ -200,8 +207,20 @@ public class DBInterface {
 		return "";
 
 	}
+	public synchronized String getIP(String userName) {
+		try {
+			resultSet = statement.executeQuery("SELECT ip FROM user WHERE name ='" + userName + "'");
+			if (resultSet.next())
+				return resultSet.getString(1);
 
-	public boolean isOwner(String userName, String fileName) {
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return "";
+
+	}
+
+	public synchronized boolean isOwner(String userName, String fileName) {
 		try {
 			resultSet = statement.executeQuery("SELECT COUNT(*) FROM file WHERE (name ='" + fileName + "' AND user = '"
 					+ userName + "')");
