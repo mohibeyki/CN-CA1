@@ -20,8 +20,7 @@ public class DBInterface {
 			Class.forName("com.mysql.jdbc.Driver");
 			try {
 				connect = DriverManager
-						.getConnection("jdbc:mysql://localhost/?" + "user="
-								+ user + "&password=" + pass);
+						.getConnection("jdbc:mysql://localhost/?" + "user=" + user + "&password=" + pass);
 				statement = connect.createStatement();
 				try {
 					statement.executeUpdate("create database salazar");
@@ -43,7 +42,7 @@ public class DBInterface {
 				}
 				try {
 					statement
-							.executeUpdate("create table userfile(id INT NOT NULL AUTO_INCREMENT, user_name VARCHAR(30) NOT NULL ,file_name VARCHAR(60) NOT NULL, PRIMARY KEY (id))");
+							.executeUpdate("create table userfile(id INT NOT NULL AUTO_INCREMENT, user_name VARCHAR(30) NOT NULL ,file_name VARCHAR(60) NOT NULL, is_valid BOOLEAN DEFAULT FALSE, PRIMARY KEY (id))");
 				} catch (SQLException e) {
 					System.err.println("Table 'userfile' already exists.");
 				}
@@ -60,21 +59,24 @@ public class DBInterface {
 
 	public ArrayList<String> getUsersWithThisFileName(String fileName) {
 		ArrayList<String> ret = new ArrayList<String>();
-
+		try {
+			resultSet = statement.executeQuery("SELECT user_name FROM userfile WHERE (file_name ='" + fileName+ "')");
+			while (resultSet.next()) 
+				ret.add(resultSet.getString(1));
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
 		return ret;
 	}
 
 	public boolean addUser(String userName) {
 		try {
-			resultSet = statement
-					.executeQuery("SELECT COUNT(*) FROM user WHERE name ='"
-							+ userName + "'");
+			resultSet = statement.executeQuery("SELECT COUNT(*) FROM user WHERE name ='" + userName + "'");
 			if (resultSet.next()) {
 				int count = resultSet.getInt(1);
 				if (count > 0)
 					return false;
-				if (statement.executeUpdate("INSERT INTO user VALUES(default,'"
-						+ userName + "')") == 0)
+				if (statement.executeUpdate("INSERT INTO user VALUES(default,'" + userName + "')") == 0)
 					return false;
 				return true;
 			}
@@ -85,29 +87,22 @@ public class DBInterface {
 		return false;
 	}
 
-	public boolean addFile(String fileName, String userName) {
+	public boolean addFile(String userName, String fileName) {
 		try {
-			resultSet = statement
-					.executeQuery("SELECT COUNT(*) FROM file WHERE name ='"
-							+ fileName + "'");
+			resultSet = statement.executeQuery("SELECT COUNT(*) FROM file WHERE name ='" + fileName + "'");
 			if (resultSet.next()) {
 				int count = resultSet.getInt(1);
 				if (count > 0)
 					return false;
-				resultSet = statement
-						.executeQuery("SELECT COUNT(*) FROM user WHERE name ='"
-								+ userName + "'");
+				resultSet = statement.executeQuery("SELECT COUNT(*) FROM user WHERE name ='" + userName + "'");
 				if (resultSet.next()) {
 					count = resultSet.getInt(1);
 					if (count == 0)
 						return false;
 				}
-				if ((statement
-						.executeUpdate("INSERT INTO file VALUES(default,'"
-								+ fileName + "', '" + userName + "')") == 0)
-						|| (statement
-								.executeUpdate("INSERT INTO userfile VALUES(default,'"
-										+ userName + "', '" + fileName + "')") == 0))
+				if ((statement.executeUpdate("INSERT INTO file VALUES(default,'" + fileName + "', '" + userName + "')") == 0)
+						|| (statement.executeUpdate("INSERT INTO userfile VALUES(default,'" + userName + "', '"
+								+ fileName + "',default)") == 0))
 					return false;
 				return true;
 			}
@@ -118,15 +113,82 @@ public class DBInterface {
 		return false;
 	}
 
-	public boolean shareFileWithUser(String userName, String fileName) {
-		return true;
+	public boolean shareFileToUser(String userName, String fileName) {
+		try {
+			resultSet = statement.executeQuery("SELECT COUNT(id) FROM userfile WHERE (file_name ='" + fileName
+					+ "' AND  user_name ='" + userName + "')");
+			if (resultSet.next()) {
+				if (resultSet.getInt(1) > 0)
+					return false;
+				if (statement.executeUpdate("INSERT INTO userfile VALUES(default,'" + userName + "', '" + fileName
+						+ "',default)") >= 0)
+					return true;
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return false;
+	}
+
+	public boolean validateUserFile(String userName, String fileName) {
+		try {
+			if (statement.executeUpdate("UPDATE userfile SET is_valid=TRUE WHERE (user_name='" + userName
+					+ "'AND file_name='" + fileName + "')") >= 0)
+				return true;
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return false;
+	}
+
+	public boolean isValidUserFile(String userName, String fileName) {
+		try {
+			resultSet = statement.executeQuery("SELECT is_valid FROM userfile WHERE (file_name ='" + fileName
+					+ "' AND  user_name ='" + userName + "')");
+			if (resultSet.next())
+				return resultSet.getBoolean(1);
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return false;
 	}
 
 	public boolean updateFile(String fileName) {
-		return true;
+		try {
+			if (statement.executeUpdate("UPDATE userfile SET is_valid=FALSE WHERE (file_name='" + fileName + "')") >= 0)
+				return true;
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return false;
+	}
+
+	public String getOwner(String fileName) {
+		try {
+			resultSet = statement.executeQuery("SELECT user FROM file WHERE name ='" + fileName + "'");
+			if (resultSet.next())
+				return resultSet.getString(1);
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return "";
+
 	}
 
 	public boolean isOwner(String userName, String fileName) {
+		try {
+			resultSet = statement.executeQuery("SELECT COUNT(*) FROM file WHERE (name ='" + fileName + "' AND user = '"
+					+ userName + "')");
+			if (resultSet.next()) {
+				int count = resultSet.getInt(1);
+				if (count > 0)
+					return true;
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
 		return false;
 	}
 
@@ -135,14 +197,12 @@ public class DBInterface {
 			// This will load the MySQL driver, each DB has its own driver
 			Class.forName("com.mysql.jdbc.Driver");
 			// Setup the connection with the DB
-			connect = DriverManager.getConnection("jdbc:mysql://localhost/"
-					+ "user=noid&password=noid");
+			connect = DriverManager.getConnection("jdbc:mysql://localhost/" + "user=noid&password=noid");
 
 			// Statements allow to issue SQL queries to the database
 			statement = connect.createStatement();
 			// Result set get the result of the SQL query
-			resultSet = statement
-					.executeQuery("select * from FEEDBACK.COMMENTS");
+			resultSet = statement.executeQuery("select * from FEEDBACK.COMMENTS");
 			writeResultSet(resultSet);
 
 			// PreparedStatements can use variables and are more efficient
@@ -164,13 +224,11 @@ public class DBInterface {
 			writeResultSet(resultSet);
 
 			// Remove again the insert comment
-			preparedStatement = connect
-					.prepareStatement("delete from FEEDBACK.COMMENTS where myuser= ? ; ");
+			preparedStatement = connect.prepareStatement("delete from FEEDBACK.COMMENTS where myuser= ? ; ");
 			preparedStatement.setString(1, "Test");
 			preparedStatement.executeUpdate();
 
-			resultSet = statement
-					.executeQuery("select * from FEEDBACK.COMMENTS");
+			resultSet = statement.executeQuery("select * from FEEDBACK.COMMENTS");
 			writeMetaData(resultSet);
 
 		} catch (Exception e) {
@@ -188,8 +246,7 @@ public class DBInterface {
 		System.out.println("The columns in the table are: ");
 		System.out.println("Table: " + resultSet.getMetaData().getTableName(1));
 		for (int i = 1; i <= resultSet.getMetaData().getColumnCount(); i++) {
-			System.out.println("Column " + i + " "
-					+ resultSet.getMetaData().getColumnName(i));
+			System.out.println("Column " + i + " " + resultSet.getMetaData().getColumnName(i));
 		}
 	}
 
