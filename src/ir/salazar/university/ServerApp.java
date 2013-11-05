@@ -92,8 +92,16 @@ class ClientHandler implements Runnable {
 						ServerApp.serverSocket.close();
 					}
 				}
-			} else
+			} else {
 				os.println("ERROR");
+				this.clientData.getSocket().close();
+				ServerApp.totalClients--;
+				System.out.println("Client with id " + this.clientData.getId()
+						+ " has disconnected!");
+				System.out.println("Total connected clients : "
+						+ ServerApp.totalClients);
+				ServerApp.clients.remove(this.clientData);
+			}
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
