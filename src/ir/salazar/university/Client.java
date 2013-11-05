@@ -34,12 +34,15 @@ class ServerThread implements Runnable {
 	private Socket clientSocket;
 	private DataOutputStream os;
 	private BufferedReader is;
-
+	Thread t;
+	
 	public ServerThread(Socket clientSocket, DataOutputStream os,
 			BufferedReader is) {
 		this.clientSocket = clientSocket;
 		this.os = os;
 		this.is = is;
+		t = new Thread(this, "Client thread");
+		t.start();
 	}
 
 	@Override
