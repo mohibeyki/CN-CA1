@@ -7,7 +7,7 @@ import java.util.Scanner;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class Client {
+public class ClientApp {
 
 	public static Lock lock;
 	public static ArrayList<Socket> serverTunnelSockets;
@@ -15,12 +15,12 @@ public class Client {
 	public static String name = "";
 
 	public static void main(String[] args) {
-		Client.serverTunnelSockets = new ArrayList<Socket>();
-		Client.lock = new ReentrantLock();
+		ClientApp.serverTunnelSockets = new ArrayList<Socket>();
+		ClientApp.lock = new ReentrantLock();
 		Socket clientSocket = null;
 		PrintStream os = null;
 		BufferedReader is = null;
-		Client.name = "Jamile";
+		ClientApp.name = "Jamile";
 		try {
 			clientSocket = new Socket("localhost", 2013);
 			os = new PrintStream(clientSocket.getOutputStream());
@@ -70,10 +70,10 @@ class ClientTunnel implements Runnable {
 	public void run() {
 		try {
 			Scanner sc = new Scanner(System.in);
-			os.println(Client.name);
+			os.println(ClientApp.name);
 			String responseLine;
 			if ((responseLine = is.readLine()) != null)
-				if (responseLine.equals(Client.name)) {
+				if (responseLine.equals(ClientApp.name)) {
 					System.out.println("Connected to the host");
 					while (sc.hasNext()) {
 						os.println(sc.nextLine());
@@ -83,7 +83,7 @@ class ClientTunnel implements Runnable {
 							if (responseLine.toLowerCase().equals("exit")
 									|| responseLine.toLowerCase().equals(
 											"killall")) {
-								for (Socket s : Client.serverTunnelSockets)
+								for (Socket s : ClientApp.serverTunnelSockets)
 									s.close();
 								break;
 							}
@@ -95,7 +95,7 @@ class ClientTunnel implements Runnable {
 			os.close();
 			is.close();
 			clientSocket.close();
-			Client.accepterSocket.close();
+			ClientApp.accepterSocket.close();
 		} catch (UnknownHostException e) {
 			System.err.println("Trying to connect to unknown host: " + e);
 		} catch (IOException e) {
@@ -110,11 +110,11 @@ class ServerTunnel implements Runnable {
 	private Socket serverSocket;
 
 	public ServerTunnel(Socket socket) {
-		Client.lock.lock();
+		ClientApp.lock.lock();
 		this.serverSocket = socket;
 		this.thread = new Thread(this, "Client connection to server");
 		this.thread.start();
-		Client.lock.unlock();
+		ClientApp.lock.unlock();
 	}
 
 	@Override
@@ -133,7 +133,7 @@ class ServerTunnel implements Runnable {
 		} catch (IOException e) {
 			e.printStackTrace();
 		} finally {
-			Client.serverTunnelSockets.remove(this.serverSocket);
+			ClientApp.serverTunnelSockets.remove(this.serverSocket);
 		}
 	}
 }
