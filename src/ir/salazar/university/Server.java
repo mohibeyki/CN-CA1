@@ -9,21 +9,21 @@ import java.util.concurrent.locks.ReentrantLock;
 public class Server {
 	public static ArrayList<ClientData> clients;
 	public static int totalClients;
-	public static boolean isAlive;
 	public static Lock lock;
+	public static ServerSocket serverSocket;
 
 	public static void main(String[] args) {
 		Server.clients = new ArrayList<ClientData>();
 		Server.totalClients = 0;
-		Server.isAlive = true;
 		Server.lock = new ReentrantLock();
+		Server.serverSocket = null;
 
-		ServerSocket serverSocket = null;
 		Socket clientSocket = null;
 		int id = 1;
 		try {
-			serverSocket = new ServerSocket(3128);
-			while ((clientSocket = serverSocket.accept()) != null) {
+			System.out.println("Server is running and kickin on port 3128");
+			Server.serverSocket = new ServerSocket(3128);
+			while ((clientSocket = Server.serverSocket.accept()) != null) {
 				ClientData data = new ClientData("", clientSocket, id++,
 						new Thread());
 				new ClientConnector(data);
@@ -76,11 +76,9 @@ class ClientConnector implements Runnable {
 					Server.clients.remove(this.clientData);
 					if (line.toLowerCase().equals("exitall")) {
 						System.out.println("Killing server now...");
-						Server.isAlive = false;
-						for (ClientData client : Server.clients) {
+						for (ClientData client : Server.clients)
 							client.getSocket().close();
-							client.setAlive(false);
-						}
+						Server.serverSocket.close();
 					}
 				}
 			}
