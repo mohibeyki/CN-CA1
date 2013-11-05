@@ -26,7 +26,7 @@ public class Server {
 			while ((clientSocket = Server.serverSocket.accept()) != null) {
 				ClientData data = new ClientData("", clientSocket, id++,
 						new Thread());
-				new ClientConnector(data);
+				new ClientHandler(data);
 			}
 		} catch (IOException e) {
 			System.out.println(e);
@@ -34,22 +34,21 @@ public class Server {
 	}
 }
 
-class ClientConnector implements Runnable {
+class ClientHandler implements Runnable {
 
 	private ClientData clientData;
+	private int index = -1;
 
-	public ClientConnector(ClientData clientData) {
+	public ClientHandler(ClientData clientData) {
 		Server.lock.lock();
 		this.clientData = clientData;
-		int index = Server.clients.size();
+		this.index = Server.clients.size();
 		Server.clients.add(clientData);
-		Server.clients.get(index).setThread(
+		Server.clients.get(this.index).setThread(
 				new Thread(this, "Cli# " + clientData.getId()));
-		Server.clients.get(index).getThread().start();
+		Server.clients.get(this.index).getThread().start();
 		Server.totalClients++;
 		Server.lock.unlock();
-		System.out.println("A client has connected!");
-		System.out.println("Total connected clients : " + Server.totalClients);
 	}
 
 	@Override
@@ -61,27 +60,40 @@ class ClientConnector implements Runnable {
 			is = new BufferedReader(new InputStreamReader(this.clientData
 					.getSocket().getInputStream()));
 			os = new PrintStream(this.clientData.getSocket().getOutputStream());
-			while (!this.clientData.getSocket().isClosed()) {
-				line = is.readLine();
-				System.out.println("Cli# " + this.clientData.getId() + " : "
-						+ line);
+			line = is.readLine();
+
+			if (line.length() > 0) {
 				os.println(line);
-				if (line.toLowerCase().startsWith("exit")) {
-					this.clientData.getSocket().close();
-					Server.totalClients--;
-					System.out.println("Client with id "
-							+ this.clientData.getId() + " has disconnected!");
-					System.out.println("Total connected clients : "
-							+ Server.totalClients);
-					Server.clients.remove(this.clientData);
-					if (line.toLowerCase().equals("exitall")) {
+				Server.clients.get(index).setName(line);
+				System.out.println("\"" + line + "\"" + " has connected!");
+				System.out.println("Total connected clients : "
+						+ Server.totalClients);
+				while (!this.clientData.getSocket().isClosed()) {
+					line = is.readLine();
+					System.out.println("Cli# " + this.clientData.getId()
+							+ " : " + line);
+					os.println(line);
+
+					if (line.toLowerCase().equals("exit")) {
+						this.clientData.getSocket().close();
+						Server.totalClients--;
+						System.out.println("Client with id "
+								+ this.clientData.getId()
+								+ " has disconnected!");
+						System.out.println("Total connected clients : "
+								+ Server.totalClients);
+						Server.clients.remove(this.clientData);
+					}
+
+					if (line.toLowerCase().equals("killall")) {
 						System.out.println("Killing server now...");
 						for (ClientData client : Server.clients)
 							client.getSocket().close();
 						Server.serverSocket.close();
 					}
 				}
-			}
+			} else
+				os.println("ERROR");
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
