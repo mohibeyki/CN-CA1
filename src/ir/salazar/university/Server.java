@@ -21,8 +21,8 @@ public class Server {
 		Socket clientSocket = null;
 		int id = 1;
 		try {
-			System.out.println("Server is running and kickin on port 3128");
-			Server.serverSocket = new ServerSocket(3128);
+			System.out.println("Server is running and kickin on port 2013");
+			Server.serverSocket = new ServerSocket(2013);
 			while ((clientSocket = Server.serverSocket.accept()) != null) {
 				ClientData data = new ClientData("", clientSocket, id++,
 						new Thread());
