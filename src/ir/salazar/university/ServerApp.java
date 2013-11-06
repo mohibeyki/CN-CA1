@@ -195,7 +195,7 @@ class ClientHandler implements Runnable {
 		System.err.println("File name after lastIndex " + s);
 		if (DBInterface.instance().addFile(clientData.getName(), s)) {
 			System.out.println("You can send your file");
-//			os.println("Send file");
+			os.write("Send file".getBytes());
 			System.out.println("I told you");
 //			InputStream in = null;
 //			try {
@@ -207,13 +207,19 @@ class ClientHandler implements Runnable {
 //			}
 			byte[] buffer = new byte[255];
 			try {
+				System.out.println("Before creating file");
 				FileOutputStream fos = new FileOutputStream("server/" + s);
 				int status = 0;
 
 				while ((status = in.read(buffer)) > 0) {
-					fos.write(buffer);
+					System.out.println("in While " + status + " ");
+					if(new String(buffer,0,status).equals("END"))
+						break;
+					fos.write(buffer,0,status);
+					System.out.println("After write");
+					
 				}
-
+				System.out.println("After reading file");
 				// while (!this.clientData.getSocket().isClosed()
 				// && (status = is.read()) > 0) {
 				// System.out.println("In while " + status);

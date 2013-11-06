@@ -8,6 +8,8 @@ import java.util.StringTokenizer;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import org.omg.CORBA.RepositoryIdHelper;
+
 public class ClientApp {
 
 	public static ArrayList<Socket> serverTunnelSockets;
@@ -20,13 +22,12 @@ public class ClientApp {
 		ClientApp.lock = new ReentrantLock();
 		Socket clientSocket;
 		OutputStream os;
-		BufferedReader is;
+		InputStream is;
 		ClientApp.name = "Jamile";
 		try {
 			clientSocket = new Socket("localhost", 2013);
 			os = clientSocket.getOutputStream();
-			is = new BufferedReader(new InputStreamReader(
-					clientSocket.getInputStream()));
+			is = clientSocket.getInputStream();
 			if (clientSocket != null && os != null && is != null)
 				new ClientTunnel(clientSocket, os, is);
 
@@ -53,11 +54,11 @@ class ClientTunnel implements Runnable {
 
 	private Socket clientSocket;
 //	private PrintStream os;
-	private BufferedReader is;
+	private InputStream is;
 	private OutputStream os;
 	Thread thread;
 
-	public ClientTunnel(Socket clientSocket, OutputStream os, BufferedReader is) {
+	public ClientTunnel(Socket clientSocket, OutputStream os, InputStream is) {
 		this.clientSocket = clientSocket;
 		this.os = os;
 		this.is = is;
@@ -71,35 +72,45 @@ class ClientTunnel implements Runnable {
 			Scanner sc = new Scanner(System.in);
 			os.write(ClientApp.name.getBytes());
 			String responseLine;
-			if ((responseLine = is.readLine()) != null)
+			byte[] buffer = new byte[255];
+			int count = is.read(buffer);
+			responseLine= new String(buffer, 0,count);
+			if (responseLine  != null)
 				if (responseLine.equals(ClientApp.name)) {
 					System.out.println("Connected to the host");
 					while (sc.hasNext()) {
 						String line = sc.nextLine();
+						System.out.println("Before OS");
 						os.write(line.getBytes());
-						if ((responseLine = is.readLine()) != null) {
+						count = is.read(buffer);
+						responseLine= new String(buffer, 0,count);
+						System.out.println("After responseLine: " + responseLine);
+						if (responseLine != null) {
 							System.out.println("First Response: "
 									+ responseLine);
 							StringTokenizer st = new StringTokenizer(line);
 
 							String cmd = st.nextToken();
+							System.out.println("CMD " + cmd);
 							if (cmd.equals("register")) {
 								System.out.println(responseLine);
 							} else if (cmd.equals("save")) {
+								System.out.println("In save");
 								String filename = st.nextToken();
 								// responseLine = is.readLine();
 								System.out.println("Server sent "
 										+ responseLine);
 								//OutputStream out = clientSocket.getOutputStream();
 								BufferedInputStream in = new BufferedInputStream(new FileInputStream(filename));
-								int count = 0;
-								byte[] buffer = new byte[255];
-								while ((count = in.read(buffer)) > 0) {
+								int count2 = 0;
+								byte[] buffer2 = new byte[255];
+								while ((count2 = in.read(buffer2)) > 0) {
 									System.out.println("In while");
-								     os.write(buffer, 0, count);
+								     os.write(buffer2, 0, count2);
 								     os.flush();
-								     System.out.println("Byte: " + new String(buffer,0,count));
+								     System.out.println("Byte: " + new String(buffer2,0,count2));
 								}
+								os.write("END".getBytes());
 								in.close();
 								System.out.println("This is the end");
 //								File file = new File(filename);
