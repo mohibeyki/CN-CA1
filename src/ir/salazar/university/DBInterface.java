@@ -2,18 +2,16 @@ package ir.salazar.university;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.Date;
 
 public class DBInterface {
 	private Connection connect = null;
 	private Statement statement = null;
 	private ResultSet resultSet = null;
-	private static DBInterface myObject;
+	private static DBInterface myObject = null;
 	
 	private DBInterface(String user, String pass) {
 		try {
@@ -220,6 +218,20 @@ public class DBInterface {
 		return "";
 
 	}
+	
+	public synchronized int getID(String userName) {
+		try {
+			resultSet = statement.executeQuery("SELECT id FROM user WHERE name ='" + userName + "'");
+			if (resultSet.next())
+				return resultSet.getInt(1);
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return -1;
+
+	}
+	
 	public synchronized String getIP(String userName) {
 		try {
 			resultSet = statement.executeQuery("SELECT ip FROM user WHERE name ='" + userName + "'");
