@@ -92,9 +92,8 @@ class ClientHandler implements Runnable {
 					job = new ShareJob(st.nextToken(), st.nextToken());
 				} else if (line.toLowerCase().startsWith("update")) {
 					job = new UpdateJob(st.nextToken());
-				}
+				}	
 				new ClientJob(job, clientData.getIp());
-
 				os.println(line);
 				exitClient(line);
 				killall(line);
