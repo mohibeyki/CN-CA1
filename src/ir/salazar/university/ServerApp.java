@@ -192,22 +192,10 @@ class ClientHandler implements Runnable {
 		s = st.nextToken();
 		int index = s.lastIndexOf('/');
 		s = s.substring(index < 0 ? 0 : index);
-		System.err.println("File name after lastIndex " + s);
 		if (DBInterface.instance().addFile(clientData.getName(), s)) {
-			System.out.println("You can send your file");
 			os.write("Send file".getBytes());
-			System.out.println("I told you");
-//			InputStream in = null;
-//			try {
-//				in = clientData.getSocket().getInputStream();
-//			} catch (IOException e1) {
-//				// TODO Auto-generated catch block
-//				e1.printStackTrace();
-//				return false;
-//			}
 			byte[] buffer = new byte[255];
 			try {
-				System.out.println("Before creating file");
 				FileOutputStream fos = new FileOutputStream("server/" + s);
 				int status = 0;
 
@@ -219,29 +207,13 @@ class ClientHandler implements Runnable {
 					System.out.println("After write");
 					
 				}
-				System.out.println("After reading file");
-				// while (!this.clientData.getSocket().isClosed()
-				// && (status = is.read()) > 0) {
-				// System.out.println("In while " + status);
-				// recv = is.read(buffer);
-				// System.out.println("recv: " + recv);
-				// String qq = new String(buffer);
-				// System.out.println("buff: " + qq);
-				//
-				// os.println(recv);
-				// fileBufferedWriter.write(buffer,0,status);
-				// if (status == 1)
-				// break;
-				// }
 				fos.close();
 			} catch (Exception e) {
 				System.err.println("ERR: Cannot receive file");
 				e.printStackTrace();
 				return false;
 			}
-			System.out.println("almost End");
 			DBInterface.instance().validateUserFile(clientData.getName(), s);
-			System.out.println("End");
 		} else {
 			os.write("ERR: You can't use this filename.".getBytes());
 			return false;

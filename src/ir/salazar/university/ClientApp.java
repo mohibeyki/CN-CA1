@@ -31,8 +31,7 @@ public class ClientApp {
 			if (clientSocket != null && os != null && is != null)
 				new ClientTunnel(clientSocket, os, is);
 
-			System.out
-					.println("ServerTunnel in client is running and kickin on port 3128");
+			System.out.println("ServerTunnel in client is running and kickin on port 3128");
 
 			accepterSocket = new ServerSocket(3128);
 			Socket tmpSocket = null;
@@ -44,8 +43,7 @@ public class ClientApp {
 		} catch (UnknownHostException e) {
 			System.err.println("Don't know about host: hostname");
 		} catch (IOException e) {
-			System.err
-					.println("Couldn't get I/O for the connection to: hostname");
+			System.err.println("Couldn't get I/O for the connection to: hostname");
 		}
 	}
 }
@@ -53,7 +51,7 @@ public class ClientApp {
 class ClientTunnel implements Runnable {
 
 	private Socket clientSocket;
-//	private PrintStream os;
+	// private PrintStream os;
 	private InputStream is;
 	private OutputStream os;
 	Thread thread;
@@ -74,89 +72,40 @@ class ClientTunnel implements Runnable {
 			String responseLine;
 			byte[] buffer = new byte[255];
 			int count = is.read(buffer);
-			responseLine= new String(buffer, 0,count);
-			if (responseLine  != null)
+			responseLine = new String(buffer, 0, count);
+			if (responseLine != null)
 				if (responseLine.equals(ClientApp.name)) {
 					System.out.println("Connected to the host");
 					while (sc.hasNext()) {
 						String line = sc.nextLine();
-						System.out.println("Before OS");
 						os.write(line.getBytes());
 						count = is.read(buffer);
-						responseLine= new String(buffer, 0,count);
-						System.out.println("After responseLine: " + responseLine);
+						responseLine = new String(buffer, 0, count);
 						if (responseLine != null) {
-							System.out.println("First Response: "
-									+ responseLine);
 							StringTokenizer st = new StringTokenizer(line);
 
 							String cmd = st.nextToken();
-							System.out.println("CMD " + cmd);
 							if (cmd.equals("register")) {
 								System.out.println(responseLine);
 							} else if (cmd.equals("save")) {
 								System.out.println("In save");
 								String filename = st.nextToken();
-								// responseLine = is.readLine();
-								System.out.println("Server sent "
-										+ responseLine);
-								//OutputStream out = clientSocket.getOutputStream();
 								BufferedInputStream in = new BufferedInputStream(new FileInputStream(filename));
 								int count2 = 0;
 								byte[] buffer2 = new byte[255];
 								while ((count2 = in.read(buffer2)) > 0) {
-									System.out.println("In while");
-								     os.write(buffer2, 0, count2);
-								     os.flush();
-								     System.out.println("Byte: " + new String(buffer2,0,count2));
+									os.write(buffer2, 0, count2);
+									os.flush();
 								}
 								os.write("END".getBytes());
 								in.close();
-								System.out.println("This is the end");
-//								File file = new File(filename);
-//								FileInputStream fis = null;
-//								BufferedInputStream bis = null;
-//								DataInputStream dis = null;
-//
-//								try {
-//									fis = new FileInputStream(file);
-//									bis = new BufferedInputStream(fis);
-//									dis = new DataInputStream(bis);
-//									int sent = 0;
-//									while (dis.available() != 0) {
-//										System.out.println("In while");
-//										byte[] buffer = new byte[255];
-//										sent = dis.read(buffer);
-//										os.write(sent);
-//										System.out.println("sent: " + sent);
-//										os.write(buffer);
-//										responseLine = is.readLine();
-//										// if (!responseLine.equals("" + sent))
-//										// {
-//										// System.err
-//										// .println("ERR: failed to send data correctly");
-//										// break;
-//										// }
-//									}
-//									os.write(0);
-//									System.out.println("This is the end");
-//									fis.close();
-//									bis.close();
-//									dis.close();
-//								} catch (FileNotFoundException e) {
-//									System.err.println("ERR: \"" + filename
-//											+ "\" " + "file not found");
-//								} catch (IOException e) {
-//									System.err.println("ERR: IOException");
-//								}
 							} else if (cmd.equals("share")) {
-//								os.println(line);
+								// os.println(line);
 							} else if (cmd.equals("update")) {
 
 							}
 
-							if (line.toLowerCase().equals("exit")
-									|| line.toLowerCase().equals("killall")) {
+							if (line.toLowerCase().equals("exit") || line.toLowerCase().equals("killall")) {
 								for (Socket s : ClientApp.serverTunnelSockets)
 									s.close();
 								break;
@@ -198,8 +147,7 @@ class ServerTunnel implements Runnable {
 		BufferedReader is;
 		PrintStream os;
 		try {
-			is = new BufferedReader(new InputStreamReader(
-					this.serverSocket.getInputStream()));
+			is = new BufferedReader(new InputStreamReader(this.serverSocket.getInputStream()));
 			os = new PrintStream(this.serverSocket.getOutputStream());
 			while (!this.serverSocket.isClosed()) {
 				line = is.readLine();
