@@ -9,37 +9,34 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public class ClientApp {
 
-	public static Lock lock;
 	public static ArrayList<Socket> serverTunnelSockets;
-	public static ServerSocket accepterSocket = null;
+	public static Lock lock;
+	public static ServerSocket accepterSocket;
 	public static String name = "";
 
 	public static void main(String[] args) {
 		ClientApp.serverTunnelSockets = new ArrayList<Socket>();
 		ClientApp.lock = new ReentrantLock();
-		Socket clientSocket = null;
-		PrintStream os = null;
-		BufferedReader is = null;
+		Socket clientSocket;
+		PrintStream os;
+		BufferedReader is;
 		ClientApp.name = "Jamile";
 		try {
 			clientSocket = new Socket("localhost", 2013);
 			os = new PrintStream(clientSocket.getOutputStream());
 			is = new BufferedReader(new InputStreamReader(
 					clientSocket.getInputStream()));
-			System.out
-					.println("ServerTunnel in client is running and kickin on port 2014");
 			if (clientSocket != null && os != null && is != null)
 				new ClientTunnel(clientSocket, os, is);
 
-			try {
-				accepterSocket = new ServerSocket(2014);
-				Socket tmpSocket = null;
-				while ((tmpSocket = accepterSocket.accept()) != null) {
-					serverTunnelSockets.add(tmpSocket);
-					new ServerTunnel(tmpSocket);
-				}
-			} catch (IOException e) {
-				System.out.println(e);
+			System.out
+					.println("ServerTunnel in client is running and kickin on port 3128");
+
+			accepterSocket = new ServerSocket(3128);
+			Socket tmpSocket = null;
+			while ((tmpSocket = accepterSocket.accept()) != null) {
+				serverTunnelSockets.add(tmpSocket);
+				new ServerTunnel(tmpSocket);
 			}
 
 		} catch (UnknownHostException e) {
@@ -119,6 +116,7 @@ class ServerTunnel implements Runnable {
 
 	@Override
 	public void run() {
+		System.err.println("Running");
 		String line;
 		BufferedReader is;
 		PrintStream os;

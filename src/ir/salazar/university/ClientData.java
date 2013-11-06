@@ -8,14 +8,15 @@ public class ClientData {
 	private int id;
 	private Thread thread;
 	private boolean isAlive;
+	private String ip;
 
-	public ClientData(String name, Socket socket, int id, Thread thread) {
-		super();
-		this.name = name;
+	public ClientData(Socket socket) {
+		this.name = "";
 		this.socket = socket;
-		this.id = id;
-		this.thread = thread;
-		this.setAlive(false);
+		this.id = -1;
+		this.thread = null;
+		this.isAlive = true;
+		this.ip = "";
 	}
 
 	public String getName() {
@@ -56,5 +57,13 @@ public class ClientData {
 
 	public void setAlive(boolean isAlive) {
 		this.isAlive = isAlive;
+	}
+
+	public String getIp() {
+		return ip;
+	}
+
+	public void setIp(String ip) {
+		this.ip = ip;
 	}
 }
