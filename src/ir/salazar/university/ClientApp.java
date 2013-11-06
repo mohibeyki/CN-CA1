@@ -88,17 +88,22 @@ class ClientTunnel implements Runnable {
 							if (cmd.equals("register")) {
 								System.out.println(responseLine);
 							} else if (cmd.equals("save")) {
-								System.out.println("In save");
 								String filename = st.nextToken();
+								int size = (int) (new File(filename)).length();
+								size = (int) Math.ceil((double)size / 1024);
+								os.write(Integer.toString(size).getBytes());
+								os.flush();
 								BufferedInputStream in = new BufferedInputStream(new FileInputStream(filename));
 								int count2 = 0;
-								byte[] buffer2 = new byte[255];
+								byte[] buffer2 = new byte[1024];
 								while ((count2 = in.read(buffer2)) > 0) {
 									os.write(buffer2, 0, count2);
 									os.flush();
 								}
-								os.write("END".getBytes());
 								in.close();
+								count = is.read(buffer);
+								responseLine = new String(buffer, 0, count);
+								System.out.println("SUC: " +responseLine);
 							} else if (cmd.equals("share")) {
 								// os.println(line);
 							} else if (cmd.equals("update")) {

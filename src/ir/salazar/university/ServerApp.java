@@ -88,6 +88,7 @@ class ClientHandler implements Runnable {
 			System.out.println("Total connected clients : "
 					+ ServerApp.totalClients);
 			while (!this.clientData.getSocket().isClosed()) {
+				System.out.print(">>");
 				byte[] buffer = new byte[255];
 				int count = in.read(buffer);
 				line = new String(buffer, 0,count);
@@ -194,18 +195,14 @@ class ClientHandler implements Runnable {
 		s = s.substring(index < 0 ? 0 : index);
 		if (DBInterface.instance().addFile(clientData.getName(), s)) {
 			os.write("Send file".getBytes());
-			byte[] buffer = new byte[255];
+			//TODO: 1024 must be constant
+			byte[] buffer = new byte[1024];
 			try {
 				FileOutputStream fos = new FileOutputStream("server/" + s);
-				int status = 0;
-
-				while ((status = in.read(buffer)) > 0) {
-					System.out.println("in While " + status + " ");
-					if(new String(buffer,0,status).equals("END"))
-						break;
+				int status = in.read(buffer);
+				int size = Integer.parseInt(new String(buffer,0,status));
+				while (size-- > 0 && (status = in.read(buffer)) > 0 ) {
 					fos.write(buffer,0,status);
-					System.out.println("After write");
-					
 				}
 				fos.close();
 			} catch (Exception e) {
@@ -218,6 +215,7 @@ class ClientHandler implements Runnable {
 			os.write("ERR: You can't use this filename.".getBytes());
 			return false;
 		}
+		os.write("Your file has been saved".getBytes());
 		return true;
 	}
 
