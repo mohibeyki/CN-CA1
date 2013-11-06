@@ -172,6 +172,19 @@ public class DBInterface {
 		return true;
 	}
 	
+	public synchronized boolean doesUserHaveThisFile(String userName, String fileName) {
+		try {
+			resultSet = statement.executeQuery("SELECT COUNT(*) FROM userfile WHERE (file_name ='" + fileName
+					+ "' AND  user_name ='" + userName + "')");
+			if (resultSet.next())
+				return resultSet.getInt(1) > 0;
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return false;
+	}
+
 	public synchronized boolean isValidUserFile(String userName, String fileName) {
 		try {
 			resultSet = statement.executeQuery("SELECT is_valid FROM userfile WHERE (file_name ='" + fileName
