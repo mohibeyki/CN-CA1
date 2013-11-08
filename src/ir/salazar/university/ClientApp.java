@@ -70,7 +70,7 @@ class ClientTunnel implements Runnable {
 			Scanner sc = new Scanner(System.in);
 			os.write(ClientApp.name.getBytes());
 			String responseLine;
-			byte[] buffer = new byte[255];
+			byte[] buffer = new byte[1024];
 			int count = is.read(buffer);
 			responseLine = new String(buffer, 0, count);
 			if (responseLine != null)
@@ -78,8 +78,11 @@ class ClientTunnel implements Runnable {
 					System.out.println("Connected to the host");
 					while (sc.hasNext()) {
 						String line = sc.nextLine();
+						System.out.println("Before write " + line);
 						os.write(line.getBytes());
+						System.out.println("Before read ");
 						count = is.read(buffer);
+						System.out.println("After read " + new String(buffer));
 						responseLine = new String(buffer, 0, count);
 						if (responseLine != null) {
 							StringTokenizer st = new StringTokenizer(line);
@@ -149,14 +152,28 @@ class ServerTunnel implements Runnable {
 	public void run() {
 		System.err.println("Running");
 		String line;
-		BufferedReader is;
-		PrintStream os;
+		InputStream is;
+		OutputStream os;
 		try {
-			is = new BufferedReader(new InputStreamReader(this.serverSocket.getInputStream()));
-			os = new PrintStream(this.serverSocket.getOutputStream());
-			while (!this.serverSocket.isClosed()) {
-				line = is.readLine();
-				os.println("Server said: " + line);
+			is = serverSocket.getInputStream();
+			os = serverSocket.getOutputStream();
+			byte[] buffer = new byte[1024];
+			int status = is.read(buffer);
+			String s = new String(buffer,0,status);
+			StringTokenizer st = new StringTokenizer(s);
+			String fileName = st.nextToken();
+			int size = Integer.parseInt(st.nextToken());
+			System.out.println("input file: " + fileName + " " + size);
+			os.write("Send file".getBytes());
+			try {
+				FileOutputStream fos = new FileOutputStream("cli/" + fileName);
+				while (size-- > 0 && (status = is.read(buffer)) > 0) {
+					fos.write(buffer, 0, status);
+				}
+				fos.close();
+			} catch (Exception e) {
+				System.err.println("ERR: Cannot receive file");
+				e.printStackTrace();
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
