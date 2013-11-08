@@ -91,26 +91,11 @@ class ClientTunnel implements Runnable {
 							if (cmd.equals("register")) {
 								System.out.println(responseLine);
 							} else if (cmd.equals("save")) {
-								String filename = st.nextToken();
-								int size = (int) (new File(filename)).length();
-								size = (int) Math.ceil((double)size / 1024);
-								os.write(Integer.toString(size).getBytes());
-								os.flush();
-								BufferedInputStream in = new BufferedInputStream(new FileInputStream(filename));
-								int count2 = 0;
-								byte[] buffer2 = new byte[1024];
-								while ((count2 = in.read(buffer2)) > 0) {
-									os.write(buffer2, 0, count2);
-									os.flush();
-								}
-								in.close();
-								count = is.read(buffer);
-								responseLine = new String(buffer, 0, count);
-								System.out.println("SUC: " +responseLine);
+								saveFile(buffer, st);
 							} else if (cmd.equals("share")) {
 								// os.println(line);
 							} else if (cmd.equals("update")) {
-
+								saveFile(buffer,st);
 							}
 
 							if (line.toLowerCase().equals("exit") || line.toLowerCase().equals("killall")) {
@@ -132,6 +117,27 @@ class ClientTunnel implements Runnable {
 		} catch (IOException e) {
 			System.err.println("IOException: " + e);
 		}
+	}
+
+	private void saveFile(byte[] buffer, StringTokenizer st) throws IOException, FileNotFoundException {
+		String responseLine;
+		int count;
+		String filename = st.nextToken();
+		int size = (int) (new File(filename)).length();
+		size = (int) Math.ceil((double)size / 1024);
+		os.write(Integer.toString(size).getBytes());
+		os.flush();
+		BufferedInputStream in = new BufferedInputStream(new FileInputStream(filename));
+		int count2 = 0;
+		byte[] buffer2 = new byte[1024];
+		while ((count2 = in.read(buffer2)) > 0) {
+			os.write(buffer2, 0, count2);
+			os.flush();
+		}
+		in.close();
+		count = is.read(buffer);
+		responseLine = new String(buffer, 0, count);
+		System.out.println("SUC: " +responseLine);
 	}
 }
 

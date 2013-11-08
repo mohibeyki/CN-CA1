@@ -115,31 +115,12 @@ class ClientHandler implements Runnable {
 						continue;
 					}
 				} else if (line.toLowerCase().startsWith("update")) {
-					if (isRegistered() == false) {
-						// send client "You're not registered yet."
-						os.write("ERR: You are not registered yet.".getBytes());
+					if(!updateFile(st))
+					{
+						System.out.println("Problem in updating");
 						continue;
-					}
-					if (st.hasMoreTokens() == false) {
-						os.write("ERR: Empty filename.".getBytes());
-						continue;
-					}
-					String fileName = st.nextToken();
-					if (DBInterface.instance().isOwner(clientData.getName(), fileName) == false) {
-						// send client "You are not the owner."
-						os.write("ERR: You are not the owner.".getBytes());
-						continue;
-					}
-					if (DBInterface.instance().updateFile(fileName)) {
-						// receive file from client
-						DBInterface.instance().validateUserFile(clientData.getName(), fileName);
-						ArrayList<String> users = DBInterface.instance().getUsersWithThisFileName(fileName);
-						// send file to these users
-						// DBInterface.instance().validateUserFile(users.get(),
-						// fileName);
 					}
 
-					job = new UpdateJob(st.nextToken());
 				}
 				if (job != null)
 					new ClientJob(job, clientData.getIp());
@@ -149,6 +130,55 @@ class ClientHandler implements Runnable {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+	}
+
+	private boolean updateFile(StringTokenizer st) throws IOException {
+		if (isRegistered() == false) {
+			os.write("ERR: You are not registered yet.".getBytes());
+			return false;
+		}
+		if (st.hasMoreTokens() == false) {
+			os.write("ERR: Empty filename.".getBytes());
+			return false;
+		}
+		String fileName = st.nextToken();
+		if (DBInterface.instance().isOwner(clientData.getName(), fileName) == false) {
+			os.write("ERR: You are not the owner.".getBytes());
+			return false;
+		}
+		if (DBInterface.instance().updateFile(fileName)) {
+			os.write("Send file".getBytes());
+			// TODO: 1024 must be constant
+			byte[] buffer = new byte[1024];
+			try {
+				FileOutputStream fos = new FileOutputStream("server/" + fileName);
+				int status = in.read(buffer);
+				int size = Integer.parseInt(new String(buffer, 0, status));
+				while (size-- > 0 && (status = in.read(buffer)) > 0) {
+					fos.write(buffer, 0, status);
+				}
+				fos.close();
+			} catch (Exception e) {
+				System.err.println("ERR: Cannot receive file");
+				e.printStackTrace();
+				return false;
+			}
+			DBInterface.instance().validateUserFile(clientData.getName(), fileName);
+			ArrayList<String> users = DBInterface.instance().getUsersWithThisFileName(fileName);
+			String tmpUsers = "";
+			for (String userName : users) {
+				if(userName == clientData.getName())
+					continue;
+				new ClientJob(new ShareJob(fileName, userName), DBInterface.instance().getIP(userName));
+				DBInterface.instance().validateUserFile(userName,fileName);
+				System.out.println("Client Job has been created. " + userName );
+				tmpUsers += userName + " ";
+			}
+			os.write(("SUC: Your file has been shared with " + tmpUsers).getBytes());			
+			return true;
+			 
+		}
+		return false;
 	}
 
 	private boolean shareFile(StringTokenizer st) throws IOException {
@@ -307,8 +337,6 @@ class ClientJob implements Runnable {
 						os.flush();
 					}
 					in.close();
-//					count2 = is.read(buffer2);
-//					S = new String(buffer, 0, count);
 					System.out.println("SUC: sending file " + filename + " to " + ((ShareJob) job).getOwner());
 				}
 				if (job.getClass() == RegisterJob.class) {
