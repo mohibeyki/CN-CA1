@@ -78,11 +78,8 @@ class ClientTunnel implements Runnable {
 					System.out.println("Connected to the host");
 					while (sc.hasNext()) {
 						String line = sc.nextLine();
-						System.out.println("Before write " + line);
 						os.write(line.getBytes());
-						System.out.println("Before read ");
 						count = is.read(buffer);
-						System.out.println("After read " + new String(buffer));
 						responseLine = new String(buffer, 0, count);
 						if (responseLine != null) {
 							StringTokenizer st = new StringTokenizer(line);
@@ -169,7 +166,6 @@ class ServerTunnel implements Runnable {
 			StringTokenizer st = new StringTokenizer(s);
 			String fileName = st.nextToken();
 			int size = Integer.parseInt(st.nextToken());
-			System.out.println("input file: " + fileName + " " + size);
 			os.write("Send file".getBytes());
 			try {
 				FileOutputStream fos = new FileOutputStream("cli/" + fileName);

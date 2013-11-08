@@ -204,7 +204,7 @@ class ClientHandler implements Runnable {
 		if (DBInterface.instance().doesUserHaveThisFile(userName, fileName)
 				|| DBInterface.instance().shareFileToUser(userName, fileName)) {
 			new ClientJob(new ShareJob(fileName, userName), DBInterface.instance().getIP(userName));
-			System.out.println("Client Job has been created.");
+			System.out.println("Client Job has been created. " + userName);
 			os.write(("SUC: Your file has been shared with " + userName).getBytes());
 			return true;
 		} else {
@@ -324,14 +324,12 @@ class ClientJob implements Runnable {
 					String filename = ((ShareJob) job).getFileName();
 					int size = (int) (new File("server/" +filename)).length();
 					size = (int) Math.ceil((double)size / 1024);
-					System.out.println("Size " + size);
 					os.write((filename +" " + Integer.toString(size)).getBytes());
 					os.flush();
 					BufferedInputStream in = new BufferedInputStream(new FileInputStream("server/" +filename));
 					int count2 = 0;
 					byte[] buffer2 = new byte[1024];
 					count2 = is.read(buffer2);
-					System.out.println("Client send: " + new String(buffer2));
 					while ((count2 = in.read(buffer2)) > 0) {
 						os.write(buffer2, 0, count2);
 						os.flush();
